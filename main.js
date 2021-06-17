@@ -21,18 +21,26 @@
         color: isError ? 'red' : 'blue',
         backgroundColor: isError ? 'pink' : 'lightblue'
     });
-    let img;
     $('<input>').appendTo(h).prop({
         type: "file"
     }).on('change',e => {
-        img = new Image();
-        img.src = URL.createObjectURL(e.target.files[0]);
+        imgElm.prop('src', URL.createObjectURL(e.target.files[0]));
     });
+    const inputImg = rpgen3.addInputStr(h,{
+        label: '画像URL入力',
+        save: true,
+        value: 'https://i.imgur.com/MrOrXaY.png'
+    });
+    inputImg.elm.on('change', () => {
+        rpgen3.findURL(inputImg.toString()).forEach(v => imgElm.prop('src', v));
+    });
+    const imgElm = $('<img>').appendTo(h);
+    inputImg.elm.trigger('change');
     $('<button>').appendTo(h).text('処理').on('click', main);
     const output = $('<div>').appendTo(h);
     const main = () => {
-        if(!img) msg('you must input file', true);
-        const {width, height} = img,
+        const img = imgElm.get(0),
+              {width, height} = img,
               cv = $('<canvas>').prop({width, height}),
               ctx = cv.get(0).getContext('2d');
         ctx.drawImage(img, 0, 0);
@@ -42,8 +50,9 @@
     };
     const toMass = (data, width, height) => new Array(height).fill().map((v,y)=>new Array(width).fill().map((v,x)=>{
         const i = x + y * width;
-        return data.slice(i, i + 3).join('#');
+        return data.slice(i, i + 3);
     }));
+    const toJoin = mass => mass.map(v=>v.map(v=>v.join('#')));
     const mode = arr => { // 最頻値
         const map = new Map();
         for(const v of arr) map.set(arr.filter(v2=>v2===v).length, v);
