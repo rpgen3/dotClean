@@ -39,7 +39,7 @@
     });
     const imgElm = $('<img>').appendTo(h);
     inputImg.elm.trigger('change');
-    $('<button>').appendTo(h).text('処理').on('click', main);
+    $('<button>').appendTo(h).text('処理').on('click', ()=>main());
     const output = $('<div>').appendTo(h);
     const main = () => {
         const img = imgElm.get(0),
