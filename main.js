@@ -51,7 +51,7 @@
         ctx.drawImage(img, 0, 0);
         const {data} = ctx.getImageData(0, 0, width, height),
               mass = toMass(data, width, height);
-        const colors = modeColors(toJoin(mass).flat(), 10);
+        const colors = modeColors(toJoin(mass).flat());
         for(const a of mass){
             for(const b of a){
                 a[b] = nearest(colors.map(v=>v.split('#')), b);
@@ -70,7 +70,15 @@
         for(const v of arr) map.set(v, map.has(v) ? map.get(v) + 1 : 1);
         return map;
     };
-    const modeColors = (arr, border) => [...count(arr)].flatMap(([k, v]) => v < border ? k : []); // 色の出現数リストから上位だけを取得
+    const modeColors = (arr, color) => { // 色の出現数リストから上位だけを取得
+        let border = 2,
+            ar = [...count(arr)];
+        while(ar.length > 20){
+            ar = ar.filter(([k,v]) => v > border);
+            border *= 2;
+        }
+        return ar.map(([k,v]) => k);
+    };
     const nearest = (arr, value) => { // 最も近い色
         const map = new Map();
         for(const v of arr) map.set(window.diffColor(v, value), v);
