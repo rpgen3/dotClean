@@ -49,8 +49,8 @@
               cv = $('<canvas>').prop({width, height}),
               ctx = cv.get(0).getContext('2d');
         ctx.drawImage(img, 0, 0);
-        const {data} = ctx.getImageData(0, 0, width, height),
-              mass = toMass(data, width, height);
+        const {data} = ctx.getImageData(0, 0, width, height);
+        return toCv(laplacian(data, width, height), width, height);
         const colors = modeColors(toJoin(mass).flat());
         for(const a of mass){
             for(const b of a){
@@ -60,11 +60,43 @@
         const unit = 2;
         makeCanvas(toJoin(mass), unit).appendTo(output.empty());
     };
-    const toMass = (data, width, height) => new Array(height).fill().map((v,y)=>new Array(width).fill().map((v,x)=>{
-        const i = x + y * width;
-        return data.slice(i, i + 3);
-    }));
     const toJoin = mass => mass.map(v=>v.map(v=>v.join('#')));
+    ////////////////////////////////////////////////////////////////////////////
+    const luminance = (()=>{
+        const r = 0.298912,
+              g = 0.586611,
+              b = 0.114478;
+        return RGB => r * RGB[0] + g * RGB[1] + b * RGB[2] | 0;
+    })();
+    const laplacian = (data, w, h) => {
+        const index = (x,y) => x + y * h << 2,
+              data2 = data.slice(),
+              kernel = [
+                  0, 0, 1, 0, 0,
+                  0, 1, 2, 1, 0,
+                  1, 2, -16, 2, 1,
+                  0, 1, 2, 1, 0,
+                  0, 0, 1, 0, 0,
+              ],
+              size = Math.sqrt(kernel.length),
+              p = size >> 1;
+        for(let i = 0; i < data.length; i += 4){
+            const x = (i >> 2) % w,
+                  y = (i >> 2) / w | 0,
+                  rgb = data.slice(i, i + 3);
+            let sum = 0;
+            for (const [i,v] of kernel.entries()) {
+                const xx = i % size,
+                      yy = i / size | 0,
+                      j = index(x + xx, y + yy);
+                sum += luminance(data.slice(j, j + 3)) * v;
+            }
+            const j = index(x,y);
+            data2[j] = data2[j + 1] = data2[j + 2] = 255 - (sum < 0 ? 0 : sum > 255 ? 255 : sum);
+        }
+        return data2;
+    };
+    ////////////////////////////////////////////////////////////////////////////
     const count = arr => {
         const map = new Map();
         for(const v of arr) map.set(v, map.has(v) ? map.get(v) + 1 : 1);
@@ -85,21 +117,10 @@
         return map.get(Math.min(...map.keys()));
     };
     const mode = arr => [...count(arr)].reduce((acc, v) => acc[1] < v[1] ? v : acc, [0,0])[0]; // 最頻値
-    const makeCanvas = (mass, unit) => {
-        const width = Math.floor(mass[0].length / unit),
-              height = Math.floor(mass.length / unit),
-              cv = $('<canvas>').prop({width, height}),
+    const toCv = (data, width, height) => {
+        const cv = $('<canvas>').prop({width, height}),
               ctx = cv.get(0).getContext('2d');
-        for(let y = 0; y < height; y++){
-            for(let x = 0; x < width; x++){
-                const [r,g,b] = mode(new Array(unit).fill().map((v,i)=>{
-                    const idx = x * unit;
-                    return mass[y * unit + i].slice(idx, idx + unit);
-                }).flat()).split('#');
-                ctx.fillStyle = `rgb(${r},${g},${b})`;
-                ctx.fillRect(x, y, 1, 1);
-            }
-        }
-        return cv;
+        ctx.putImageData(new ImageData(data, width, height), 0, 0);
+        return cv.appendTo(output.empty());
     };
 })();
