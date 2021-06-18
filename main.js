@@ -1,5 +1,8 @@
 (async()=>{
-    await import('https://rpgen3.github.io/lib/lib/jquery-3.5.1.min.js');
+    await Promise.all([
+        'https://rpgen3.github.io/lib/lib/jquery-3.5.1.min.js',
+        'https://yaju1919.github.io/lib/lib/diffColor.js',
+    ].map(v=>import(v)));
     const rpgen3 = await Promise.all([
         'baseN',
         'css',
@@ -46,13 +49,30 @@
         ctx.drawImage(img, 0, 0);
         const {data} = ctx.getImageData(0, 0, width, height),
               mass = toMass(data, width, height);
-        makeCanvas(mass, unit).appendTo(output.empty());
+        const colors = modeColors(toJoin(mass).flat(), 10);
+        for(const a of mass){
+            for(const b of a){
+                a[b] = nearest(colors.map(v=>v.split('#')), b);
+            }
+        }
+        const unit = 2;
+        makeCanvas(toJoin(mass), unit).appendTo(output.empty());
     };
     const toMass = (data, width, height) => new Array(height).fill().map((v,y)=>new Array(width).fill().map((v,x)=>{
         const i = x + y * width;
         return data.slice(i, i + 3);
     }));
     const toJoin = mass => mass.map(v=>v.map(v=>v.join('#')));
+    const modeColors = (arr, border) => { // 色の出現数リストから上位だけを取得
+        const map = new Map();
+        for(const v of arr) !map.has(v) && map.set(v, arr.filter(v2=>v2===v).length);
+        return [...map].flatMap(([k, v]) => v < border ? k : []);
+    };
+    const nearest = (arr, value) => { // 最も近い色
+        const map = new Map();
+        for(const v of arr) map.set(window.diffColor(v, value), v);
+        return map.get(Math.min(...map.keys()));
+    };
     const mode = arr => { // 最頻値
         const map = new Map();
         for(const v of arr) map.set(arr.filter(v2=>v2===v).length, v);
