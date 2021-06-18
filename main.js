@@ -67,7 +67,7 @@
     const toJoin = mass => mass.map(v=>v.map(v=>v.join('#')));
     const modeColors = (arr, border) => { // 色の出現数リストから上位だけを取得
         const map = new Map();
-        for(const v of arr) !map.has(v) && map.set(v, arr.filter(v2=>v2===v).length);
+        for(const v of arr) map.set(v, map.has(v) ? map.get(v) + 1 : 1);
         return [...map].flatMap(([k, v]) => v < border ? k : []);
     };
     const nearest = (arr, value) => { // 最も近い色
