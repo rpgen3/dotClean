@@ -65,21 +65,18 @@
         return data.slice(i, i + 3);
     }));
     const toJoin = mass => mass.map(v=>v.map(v=>v.join('#')));
-    const modeColors = (arr, border) => { // 色の出現数リストから上位だけを取得
+    const count = arr => {
         const map = new Map();
         for(const v of arr) map.set(v, map.has(v) ? map.get(v) + 1 : 1);
-        return [...map].flatMap(([k, v]) => v < border ? k : []);
+        return map;
     };
+    const modeColors = (arr, border) => [...count(arr)].flatMap(([k, v]) => v < border ? k : []); // 色の出現数リストから上位だけを取得
     const nearest = (arr, value) => { // 最も近い色
         const map = new Map();
         for(const v of arr) map.set(window.diffColor(v, value), v);
         return map.get(Math.min(...map.keys()));
     };
-    const mode = arr => { // 最頻値
-        const map = new Map();
-        for(const v of arr) map.set(arr.filter(v2=>v2===v).length, v);
-        return map.get(Math.max(...map.keys()));
-    };
+    const mode = arr => [...count(arr)].reduce((acc, v) => acc[1] < v[1] ? v : acc, [0,0])[0]; // 最頻値
     const makeCanvas = (mass, unit) => {
         const width = Math.floor(mass[0].length / unit),
               height = Math.floor(mass.length / unit),
