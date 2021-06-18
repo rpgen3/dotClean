@@ -37,7 +37,9 @@
     inputImg.elm.on('change', () => {
         rpgen3.findURL(inputImg.toString()).forEach(v => imgElm.prop('src', v));
     });
-    const imgElm = $('<img>').appendTo(h);
+    const imgElm = $('<img>').appendTo(h).prop({
+        crossOrigin: "anonymous"
+    });
     inputImg.elm.trigger('change');
     $('<button>').appendTo(h).text('処理').on('click', ()=>main());
     const output = $('<div>').appendTo(h);
