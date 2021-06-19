@@ -159,8 +159,8 @@
         let ar = [];
         for(let i = 0; i < data.length; i += 4) ar.push(data.slice(i, i + 3).join(sign));
         let now = [...count(ar)];
-        while(now.length > 20){
-            const border = rpgen3.randArray(now)[1];
+        while(now.length > 30){
+            const border = rpgen3.randArr(now)[1];
             now = now.filter(([k,v]) => v > border);
         }
         return now.map(([k,v]) => k);
