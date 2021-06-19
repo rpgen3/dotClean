@@ -20,11 +20,13 @@
         padding: "1em"
     });
     $("<h1>").appendTo(h).text('ドット絵を綺麗にする');
-    const hMsg = $("<div>").appendTo(h);
-    const msg = (str, isError) => $("<span>").appendTo(hMsg.empty()).text(str).css({
-        color: isError ? 'red' : 'blue',
-        backgroundColor: isError ? 'pink' : 'lightblue'
-    });
+    const msg = (()=>{
+        const elm = $("<div>").appendTo(h);
+        return (str, isError) => $("<span>").appendTo(elm.empty()).text(str).css({
+            color: isError ? 'red' : 'blue',
+            backgroundColor: isError ? 'pink' : 'lightblue'
+        });
+    })();
     $('<button>').appendTo(h).text('処理').on('click', ()=>main());
     const inputNoise = rpgen3.addSelect(h,{
         label: 'ノイズ除去度',
