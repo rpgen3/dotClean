@@ -28,8 +28,27 @@
     $('<button>').appendTo(h).text('処理').on('click', ()=>main());
     const inputNoise = rpgen3.addSelect(h,{
         label: 'ノイズ除去度',
-        list: [2, 3, 4],
-        value: 3
+        value: 3,
+        list: [2, 3, 4]
+    });
+    const inputColors = rpgen3.addSelect("#MedianCut",{
+        label: "色数",
+        save: true,
+        value: 16,
+        list: {
+            "2色": 2,
+            "3色": 3,
+            "4色": 4,
+            "5色": 5,
+            "6色": 6,
+            "7色": 7,
+            "8色": 8,
+            "16色": 16,
+            "32色": 32,
+            "64色": 64,
+            "128色": 128,
+            "256色": 256,
+        }
     });
     $('<input>').appendTo(h).prop({
         type: "file"
@@ -59,17 +78,18 @@
               cv = $('<canvas>').prop({width, height}),
               ctx = cv.get(0).getContext('2d');
         ctx.drawImage(img, 0, 0);
-        const {data} = ctx.getImageData(0, 0, width, height);
-        await dialog('16色に減色します');
-        new TMedianCut(data, getColorInfo(data)).run(16, true);
-        await dialog('減色しました。エッジ検出します');
+        const imgData = ctx.getImageData(0, 0, width, height),
+              {data} = imgData;
+        await dialog('エッジ検出します');
         const bin = laplacian(data, width, height);
         await dialog('エッジ検出完了。ノイズを取り除きます');
         cleanBin(bin, width, height);
         await dialog('ノイズを取り除きました。単位を求めます');
         const unit = calcUnit(bin, width, height);
-        await dialog('単位を求めました。ドット絵を描きます');
-        const [dd, ww, hh] = await draw(data, width, height, unit, getColors(data));
+        await dialog(`単位を求めました。${inputColors}色に減色します`);
+        new window.TMedianCut(imgData, window.getColorInfo(imgData)).run(inputColors, true);
+        await dialog('減色しました。ドット絵を描きます');
+        const [dd, ww, hh] = await draw(data, width, height, unit, window.getColorInfo(imgData).map(({r,g,b})=>[r,g,b]));
         await dialog('完成☆');
         toCv(dd, ww, hh);
     };
@@ -155,20 +175,12 @@
         return map;
     };
     const mode = arr => [...count(arr)].reduce((acc, v) => acc[1] < v[1] ? v : acc, [0,0])[0]; // 最頻値
-    const sign = '#';
-    const getColors = data => { // 色の出現数リストから上位だけを取得
-        const ar = [];
-        for(let i = 0; i < data.length; i += 4) {
-            const s = data.slice(i, i + 3).join(sign);
-            if(!ar.includes(s)) ar.push(s);
-        }
-        return ar.map(v => v.split(sign));
-    };
     const draw = async (data, w, h, unit, colors) => {
         const ww = w / unit | 0,
               hh = h / unit | 0,
               index = (x,y) => x + y * w,
-              d = new Uint8ClampedArray(ww * hh << 2);
+              d = new Uint8ClampedArray(ww * hh << 2),
+              sign = '#';
         for(let i = 0; i < d.length; i += 4){
             const x = (i >> 2) % ww,
                   y = (i >> 2) / ww | 0,
