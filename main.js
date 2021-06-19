@@ -34,7 +34,9 @@
     const inputDiff = rpgen3.addInputNum(h,{
         label: '単位ピクセルの補正値',
         save: true,
-        value: 3
+        value: 3,
+        min: -5,
+        max: 5
     });
     const inputColors = rpgen3.addSelect(h,{
         label: '色数',
