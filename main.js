@@ -50,7 +50,7 @@
     const sleep = ms => new Promise(resolve=>setTimeout(resolve, ms));
     const dialog = async str => {
         msg(str);
-        await sleep(100);
+        await sleep(30);
     };
     const main = async () => {
         const img = imgElm.get(0),
@@ -186,7 +186,7 @@
             d[i + 1] = g;
             d[i + 2] = b;
             d[i + 3] = 255;
-            await dialog(`x:(${x}/${w}) y:(${y}/${h})`);
+            !x && await dialog(`y:(${y}/${h})`);
         }
         return [d, ww, hh];
     };
