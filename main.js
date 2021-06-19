@@ -68,9 +68,9 @@
         await dialog('単位を求めました。色をサンプリングします');
         const colors = modeColors(data);
         await dialog('色をサンプリングしました。ドット絵を描きます');
-        const data2 = draw(data, width, height, unit, colors);
+        const [dd, ww, hh] = await draw(data, width, height, unit, colors);
         await dialog('完成☆');
-        toCv(data2, width, height);
+        toCv(dd, ww, hh);
     };
     const luminance = ([r,g,b]) => r * 0.298912 + g * 0.586611 + b * 0.114478 | 0;
     const laplacian = (data, w, h) => {
@@ -156,15 +156,16 @@
     const mode = arr => [...count(arr)].reduce((acc, v) => acc[1] < v[1] ? v : acc, [0,0])[0]; // 最頻値
     const sign = '#';
     const modeColors = data => { // 色の出現数リストから上位だけを取得
-        let ar = [], border = 2;
+        let ar = [];
         for(let i = 0; i < data.length; i += 4) ar.push(data.slice(i, i + 3).join(sign));
-        while(ar.length > 20){
-            ar = ar.filter(([k,v]) => v > border);
-            border *= 2;
+        let now = [...count(ar)];
+        while(now.length > 20){
+            const border = rpgen3.randArray(now)[1];
+            now = now.filter(([k,v]) => v > border);
         }
-        return ar.map(([k,v]) => k);
+        return now.map(([k,v]) => k);
     };
-    const draw = (data, w, h, unit, colors) => {
+    const draw = async (data, w, h, unit, colors) => {
         const ww = w / unit | 0,
               hh = h / unit | 0,
               index = (x,y) => x + y * w,
@@ -185,8 +186,9 @@
             d[i + 1] = g;
             d[i + 2] = b;
             d[i + 3] = 255;
+            await dialog(`x:(${x}/${w}) y:(${y}/${h})`);
         }
-        return d;
+        return [d, ww, hh];
     };
     const nearest = (arr, value) => { // 最も近い色
         const map = new Map();
