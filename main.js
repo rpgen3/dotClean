@@ -63,16 +63,14 @@
         const bin = laplacian(data, width, height);
         await dialog('エッジ検出完了。ノイズを取り除きます');
         cleanBin(bin, width, height);
-        await dialog('ノイズを取り除きました');
-        return toCv(binToCv(bin), width, height);
-        const colors = modeColors(toJoin(mass).flat());
-        for(const a of mass){
-            for(const b of a){
-                a[b] = nearest(colors.map(v=>v.split('#')), b);
-            }
-        }
-        const unit = 2;
-        makeCanvas(toJoin(mass), unit).appendTo(output.empty());
+        await dialog('ノイズを取り除きました。単位を求めます');
+        const unit = calcUnit(bin, width, height);
+        await dialog('単位を求めました。色をサンプリングします');
+        const colors = modeColors(data);
+        await dialog('色をサンプリングしました。ドット絵を描きます');
+        const data2 = draw(data, width, height, unit, colors);
+        await dialog('完成☆');
+        toCv(data2, width, height);
     };
     const luminance = ([r,g,b]) => r * 0.298912 + g * 0.586611 + b * 0.114478 | 0;
     const laplacian = (data, w, h) => {
@@ -124,39 +122,81 @@
             if(sum < noise) bin[index(x, y)] = 0;
         }
     };
+    const calcUnit = (bin, w, h) => {
+        const index = (x,y) => x + y * w,
+              ar = [];
+        for(const bool of [0, 1]){
+            for(let y = 0; y < h; y++){
+                let min = Infinity,
+                    flag = true,
+                    last = 0;
+                for(let x = 0; x < w; x++){
+                    if(!bin[bool ? index(x, y) : index(y, x)]) continue;
+                    if(flag) {
+                        flag = false;
+                        const v = x - last - 1;
+                        if(v < min && v > 1) min = v;
+                    }
+                    else {
+                        flag = true;
+                        last = y;
+                    }
+                }
+                ar.push(min);
+            }
+        }
+        const max = Math.min(w, h);
+        return mode(ar.filter(v => v < max));
+    };
     const count = arr => {
         const map = new Map();
         for(const v of arr) map.set(v, map.has(v) ? map.get(v) + 1 : 1);
         return map;
     };
-    const modeColors = (arr, color) => { // 色の出現数リストから上位だけを取得
-        let border = 2,
-            ar = [...count(arr)];
+    const mode = arr => [...count(arr)].reduce((acc, v) => acc[1] < v[1] ? v : acc, [0,0])[0]; // 最頻値
+    const sign = '#';
+    const modeColors = data => { // 色の出現数リストから上位だけを取得
+        let ar = [], border = 2;
+        for(let i = 0; i < data.length; i += 4) ar.push(data.slice(i, i + 3).join(sign));
         while(ar.length > 20){
             ar = ar.filter(([k,v]) => v > border);
             border *= 2;
         }
         return ar.map(([k,v]) => k);
     };
+    const draw = (data, w, h, unit, colors) => {
+        const ww = w / unit | 0,
+              hh = h / unit | 0,
+              index = (x,y) => x + y * w,
+              d = new Uint8ClampedArray(ww * hh << 2),
+              list = colors.map(v=>v.split(sign));
+        for(let i = 0; i < d.length; i += 4){
+            const x = i % ww,
+                  y = i / ww | 0,
+                  ar = [];
+            for(let ii = 0, max = unit * unit; ii < max; ii++){
+                const xx = ii % unit,
+                      yy = ii / unit | 0,
+                      j = index(unit * x + xx, unit * y + yy) << 2;
+                ar.push(nearest(list, data.slice(j, j + 3)).join(sign));
+            }
+            const [r, g, b] = mode(ar).split(sign);
+            d[i] = r;
+            d[i + 1] = g;
+            d[i + 2] = b;
+            d[i + 3] = 255;
+        }
+        return d;
+    };
     const nearest = (arr, value) => { // 最も近い色
         const map = new Map();
         for(const v of arr) map.set(window.diffColor(v, value), v);
         return map.get(Math.min(...map.keys()));
     };
-    const mode = arr => [...count(arr)].reduce((acc, v) => acc[1] < v[1] ? v : acc, [0,0])[0]; // 最頻値
     const toCv = (data, width, height) => {
         const cv = $('<canvas>').prop({width, height}),
               ctx = cv.get(0).getContext('2d');
         ctx.putImageData(new ImageData(data, width, height), 0, 0);
         return cv.appendTo(output.empty());
-    };
-    const binToCv = bin => {
-        const d = new Uint8ClampedArray(bin.length << 2);
-        for(const [i,v] of bin.entries()){
-            const j = i << 2;
-            if(!v) d[j] = d[j + 1] = d[j + 2] = 255;
-            d[j + 3] = 255;
-        }
-        return d;
     };
 })();
