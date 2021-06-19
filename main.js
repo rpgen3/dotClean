@@ -186,7 +186,7 @@
             d[i + 1] = g;
             d[i + 2] = b;
             d[i + 3] = 255;
-            !x && await dialog(`y:(${y}/${h})`);
+            x || await dialog(`y:(${y}/${h})`);
         }
         return [d, ww, hh];
     };
