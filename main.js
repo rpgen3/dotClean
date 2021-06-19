@@ -172,8 +172,8 @@
               d = new Uint8ClampedArray(ww * hh << 2),
               list = colors.map(v=>v.split(sign));
         for(let i = 0; i < d.length; i += 4){
-            const x = i % ww,
-                  y = i / ww | 0,
+            const x = (i >> 2) % ww,
+                  y = (i >> 2) / ww | 0,
                   ar = [];
             for(let ii = 0, max = unit * unit; ii < max; ii++){
                 const xx = ii % unit,
