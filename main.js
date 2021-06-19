@@ -32,7 +32,7 @@
         list: [2, 3, 4]
     });
     const inputDiff = rpgen3.addInputNum(h,{
-        label: '単位ピクセルの補正値',
+        label: '単位の補正値',
         save: true,
         value: 3,
         min: -5,
