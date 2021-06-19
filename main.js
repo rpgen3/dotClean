@@ -2,6 +2,7 @@
     await Promise.all([
         'https://rpgen3.github.io/lib/lib/jquery-3.5.1.min.js',
         'https://yaju1919.github.io/lib/lib/diffColor.js',
+        'https://rpgen3.github.io/lib/lib/MedianCut.js'
     ].map(v=>import(v)));
     const rpgen3 = await Promise.all([
         'baseN',
@@ -59,16 +60,16 @@
               ctx = cv.get(0).getContext('2d');
         ctx.drawImage(img, 0, 0);
         const {data} = ctx.getImageData(0, 0, width, height);
-        await dialog('エッジ検出します');
+        await dialog('16色に減色します');
+        new TMedianCut(data, getColorInfo(data)).run(16, true);
+        await dialog('減色しました。エッジ検出します');
         const bin = laplacian(data, width, height);
         await dialog('エッジ検出完了。ノイズを取り除きます');
         cleanBin(bin, width, height);
         await dialog('ノイズを取り除きました。単位を求めます');
         const unit = calcUnit(bin, width, height);
-        await dialog('単位を求めました。色をサンプリングします');
-        const colors = modeColors(data);
-        await dialog('色をサンプリングしました。ドット絵を描きます');
-        const [dd, ww, hh] = await draw(data, width, height, unit, colors);
+        await dialog('単位を求めました。ドット絵を描きます');
+        const [dd, ww, hh] = await draw(data, width, height, unit, getColors(data));
         await dialog('完成☆');
         toCv(dd, ww, hh);
     };
@@ -149,28 +150,25 @@
         return mode(ar.filter(v => v < max));
     };
     const count = arr => {
-        const map = new Map();
+        const map = new Map;
         for(const v of arr) map.set(v, map.has(v) ? map.get(v) + 1 : 1);
         return map;
     };
     const mode = arr => [...count(arr)].reduce((acc, v) => acc[1] < v[1] ? v : acc, [0,0])[0]; // 最頻値
     const sign = '#';
-    const modeColors = data => { // 色の出現数リストから上位だけを取得
-        let ar = [];
-        for(let i = 0; i < data.length; i += 4) ar.push(data.slice(i, i + 3).join(sign));
-        let now = [...count(ar)];
-        while(now.length > 30){
-            const border = rpgen3.randArr(now)[1];
-            now = now.filter(([k,v]) => v > border);
+    const getColors = data => { // 色の出現数リストから上位だけを取得
+        const ar = [];
+        for(let i = 0; i < data.length; i += 4) {
+            const s = data.slice(i, i + 3).join(sign);
+            if(!ar.includes(s)) ar.push(s);
         }
-        return now.map(([k,v]) => k);
+        return ar.map(v => v.split(sign));
     };
     const draw = async (data, w, h, unit, colors) => {
         const ww = w / unit | 0,
               hh = h / unit | 0,
               index = (x,y) => x + y * w,
-              d = new Uint8ClampedArray(ww * hh << 2),
-              list = colors.map(v=>v.split(sign));
+              d = new Uint8ClampedArray(ww * hh << 2);
         for(let i = 0; i < d.length; i += 4){
             const x = (i >> 2) % ww,
                   y = (i >> 2) / ww | 0,
@@ -179,19 +177,19 @@
                 const xx = ii % unit,
                       yy = ii / unit | 0,
                       j = index(unit * x + xx, unit * y + yy) << 2;
-                ar.push(nearest(list, data.slice(j, j + 3)).join(sign));
+                ar.push(nearest(colors, data.slice(j, j + 3)).join(sign));
             }
             const [r, g, b] = mode(ar).split(sign);
             d[i] = r;
             d[i + 1] = g;
             d[i + 2] = b;
             d[i + 3] = 255;
-            x || await dialog(`y:(${y}/${ww})`);
+            x || await dialog(`描画中…(${y}/${ww})`);
         }
         return [d, ww, hh];
     };
     const nearest = (arr, value) => { // 最も近い色
-        const map = new Map();
+        const map = new Map;
         for(const v of arr) map.set(window.diffColor(v, value), v);
         return map.get(Math.min(...map.keys()));
     };
