@@ -31,23 +31,28 @@
         value: 3,
         list: [2, 3, 4]
     });
-    const inputColors = rpgen3.addSelect("#MedianCut",{
-        label: "色数",
+    const inputDiff = rpgen3.addInputNum(h,{
+        label: '単位ピクセルの補正値',
         save: true,
-        value: 16,
+        value: 3
+    });
+    const inputColors = rpgen3.addSelect(h,{
+        label: '色数',
+        save: true,
+        value: '16色',
         list: {
-            "2色": 2,
-            "3色": 3,
-            "4色": 4,
-            "5色": 5,
-            "6色": 6,
-            "7色": 7,
-            "8色": 8,
-            "16色": 16,
-            "32色": 32,
-            "64色": 64,
-            "128色": 128,
-            "256色": 256,
+            '2色': 2,
+            '3色': 3,
+            '4色': 4,
+            '5色': 5,
+            '6色': 6,
+            '7色': 7,
+            '8色': 8,
+            '16色': 16,
+            '32色': 32,
+            '64色': 64,
+            '128色': 128,
+            '256色': 256,
         }
     });
     $('<input>').appendTo(h).prop({
@@ -167,7 +172,7 @@
             }
         }
         const max = Math.min(w, h);
-        return mode(ar.filter(v => v < max));
+        return mode(ar.filter(v => v < max)) + inputDiff;
     };
     const count = arr => {
         const map = new Map;
