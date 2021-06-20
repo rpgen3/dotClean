@@ -1,7 +1,6 @@
 (async()=>{
     await Promise.all([
-        'https://rpgen3.github.io/lib/lib/jquery-3.5.1.min.js',
-        'https://yaju1919.github.io/lib/lib/diffColor.js'
+        'https://rpgen3.github.io/lib/lib/jquery-3.5.1.min.js'
     ].map(v=>import(v)));
     $.getScript('https://rpgen3.github.io/lib/lib/MedianCut.js');
     const rpgen3 = await Promise.all([
@@ -36,14 +35,14 @@
     const inputDiff = rpgen3.addInputNum(h,{
         label: '単位の補正値',
         save: true,
-        value: 3,
-        min: -5,
-        max: 5
+        value: 1,
+        min: -3,
+        max: 3
     });
     const inputColors = rpgen3.addSelect(h,{
         label: '色数',
         save: true,
-        value: '16色',
+        value: '32色',
         list: {
             '2色': 2,
             '3色': 3,
@@ -66,10 +65,11 @@
     });
     const inputImg = rpgen3.addInputStr(h,{
         label: '画像URL入力',
-        value: 'https://i.imgur.com/MrOrXaY.png'
+        value: 'https://i.imgur.com/IRQAYsN.png'
     });
     inputImg.elm.on('change', () => {
-        rpgen3.findURL(inputImg.toString()).forEach(v => imgElm.prop('src', v));
+        if(rpgen3.getDomain(inputImg).join('.') === 'i.imgur.com') imgElm.prop('src', inputImg);
+        else msg('CORSのためi.imgur.comの画像しか使えません', true);
     });
     const imgElm = $('<img>').appendTo(h).prop({
         crossOrigin: "anonymous"
@@ -98,7 +98,7 @@
         await dialog(`単位を求めました。${inputColors}色に減色します`);
         new window.TMedianCut(imgData, window.getColorInfo(imgData)).run(inputColors, true);
         await dialog('減色しました。ドット絵を描きます');
-        const [dd, ww, hh] = await draw(data, width, height, unit, window.getColorInfo(imgData).map(({r,g,b})=>[r,g,b]));
+        const [dd, ww, hh] = await draw(data, width, height, unit);
         await dialog('完成☆');
         toCv(dd, ww, hh);
     };
@@ -183,8 +183,8 @@
         for(const v of arr) map.set(v, map.has(v) ? map.get(v) + 1 : 1);
         return map;
     };
-    const mode = arr => [...count(arr)].reduce((acc, v) => acc[1] < v[1] ? v : acc, [0,0])[0]; // 最頻値
-    const draw = async (data, w, h, unit, colors) => {
+    const mode = arr => [...count(arr)].reduce((acc, v) => acc[1] < v[1] ? v : acc, [0,0])[0];
+    const draw = async (data, w, h, unit) => {
         const ww = w / unit | 0,
               hh = h / unit | 0,
               index = (x,y) => x + y * w,
@@ -198,7 +198,7 @@
                 const xx = ii % unit,
                       yy = ii / unit | 0,
                       j = index(unit * x + xx, unit * y + yy) << 2;
-                ar.push(nearest(colors, data.slice(j, j + 3)).join(sign));
+                ar.push(data.slice(j, j + 3).join(sign));
             }
             const [r, g, b] = mode(ar).split(sign);
             d[i] = r;
@@ -208,11 +208,6 @@
             x || await dialog(`描画中…(${y}/${ww})`);
         }
         return [d, ww, hh];
-    };
-    const nearest = (arr, value) => { // 最も近い色
-        const map = new Map;
-        for(const v of arr) map.set(window.diffColor(v, value), v);
-        return map.get(Math.min(...map.keys()));
     };
     const toCv = (data, width, height) => {
         const cv = $('<canvas>').prop({width, height}),
