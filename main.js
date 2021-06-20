@@ -207,7 +207,7 @@
             d[i + 1] = g;
             d[i + 2] = b;
             d[i + 3] = 255;
-            x || await dialog(`描画中…(${y}/${ww})`);
+            x || await dialog(`描画中…(${y}/${hh})`);
         }
         return [d, ww, hh];
     };
