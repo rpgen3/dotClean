@@ -9,10 +9,11 @@
         'hankaku',
         'input',
         'random',
+        'sample',
         'save',
+        'strToImg',
         'url',
-        'util',
-        'strToImg'
+        'util'
     ].map(v=>import(`https://rpgen3.github.io/mylib/export/${v}.mjs`))).then(v=>Object.assign({},...v));
     const h = $('body').css({
         "text-align": "center",
@@ -183,14 +184,8 @@
             }
         }
         const max = Math.min(w, h);
-        return mode(ar.filter(v => v < max)) + inputDiff;
+        return rpgen3.mode(ar.filter(v => v < max)) + inputDiff;
     };
-    const count = arr => {
-        const map = new Map;
-        for(const v of arr) map.set(v, map.has(v) ? map.get(v) + 1 : 1);
-        return map;
-    };
-    const mode = arr => [...count(arr)].reduce((acc, v) => acc[1] < v[1] ? v : acc, [0,0])[0];
     const draw = async (data, w, h, unit) => {
         const ww = w / unit | 0,
               hh = h / unit | 0,
@@ -207,7 +202,7 @@
                       j = index(unit * x + xx, unit * y + yy) << 2;
                 ar.push(data.slice(j, j + 3).join(sign));
             }
-            const [r, g, b] = mode(ar).split(sign);
+            const [r, g, b] = rpgen3.median(ar).split(sign);
             d[i] = r;
             d[i + 1] = g;
             d[i + 2] = b;
