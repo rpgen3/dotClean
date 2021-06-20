@@ -58,10 +58,14 @@
             '256色': 256,
         }
     });
+    $('<h2>').appendTo(h).text('画像を読み込む(2通り)');
+    $('<p>').appendTo(h).text(`入力画像の端のドットは0.5だったりしませんか？
+    1に合わせると高精度になります`);
     $('<input>').appendTo(h).prop({
         type: "file"
     }).on('change',e => {
         imgElm.prop('src', URL.createObjectURL(e.target.files[0]));
+        msg('ファイルから画像を読み込みました');
     });
     const inputURL = rpgen3.addInputStr(h,{
         label: '画像URL入力',
@@ -69,7 +73,10 @@
     });
     inputURL.elm.on('change', () => {
         const url = inputURL();
-        if(rpgen3.getDomain(url).join('.') === 'i.imgur.com') imgElm.prop('src', url);
+        if(rpgen3.getDomain(url).join('.') === 'i.imgur.com') {
+            imgElm.prop('src', url);
+            msg('Imgurから画像を読み込みました');
+        }
         else msg('CORSのためi.imgur.comの画像しか使えません', true);
     });
     const imgElm = $('<img>').appendTo(h).prop({
