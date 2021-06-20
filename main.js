@@ -63,18 +63,19 @@
     }).on('change',e => {
         imgElm.prop('src', URL.createObjectURL(e.target.files[0]));
     });
-    const inputImg = rpgen3.addInputStr(h,{
+    const inputURL = rpgen3.addInputStr(h,{
         label: '画像URL入力',
         value: 'https://i.imgur.com/IRQAYsN.png'
     });
-    inputImg.elm.on('change', () => {
-        if(rpgen3.getDomain(inputImg).join('.') === 'i.imgur.com') imgElm.prop('src', inputImg);
+    inputURL.elm.on('change', () => {
+        const url = inputURL();
+        if(rpgen3.getDomain(url).join('.') === 'i.imgur.com') imgElm.prop('src', url);
         else msg('CORSのためi.imgur.comの画像しか使えません', true);
     });
     const imgElm = $('<img>').appendTo(h).prop({
         crossOrigin: "anonymous"
     });
-    inputImg.elm.trigger('change');
+    inputURL.elm.trigger('change');
     const output = $('<div>').appendTo(h);
     const sleep = ms => new Promise(resolve=>setTimeout(resolve, ms));
     const dialog = async str => {
