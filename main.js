@@ -100,12 +100,15 @@
               {data} = imgData;
         await dialog('エッジ検出します');
         const bin = LoG(data, width, height);
+        await dialog('ノイズを削除します');
         cleanBin(bin, width, height);
+        await dialog('単位を求めます');
         const unit = calcUnit(bin, width, height);
         if(inputColors()) {
             await dialog(`${inputColors}色に減色します`);
             new window.TMedianCut(imgData, window.getColorInfo(imgData)).run(inputColors, true);
         }
+        await dialog('描画します');
         const [dd, ww, hh] = await draw(data, width, height, unit);
         await dialog('完成☆');
         toCv(dd, ww, hh);
