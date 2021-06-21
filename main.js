@@ -4,16 +4,9 @@
     ].map(v=>import(v)));
     $.getScript('https://rpgen3.github.io/lib/lib/MedianCut.js');
     const rpgen3 = await Promise.all([
-        'baseN',
-        'css',
-        'hankaku',
         'input',
-        'random',
         'sample',
-        'save',
-        'strToImg',
-        'url',
-        'util'
+        'url'
     ].map(v=>import(`https://rpgen3.github.io/mylib/export/${v}.mjs`))).then(v=>Object.assign({},...v));
     const h = $('body').css({
         "text-align": "center",
