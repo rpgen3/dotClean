@@ -99,10 +99,8 @@
         const imgData = ctx.getImageData(0, 0, width, height),
               {data} = imgData;
         await dialog('エッジ検出します');
-        const bin = laplacian(data, width, height);
-        await dialog('エッジ検出完了。ノイズを取り除きます');
+        const bin = LoG(data, width, height);
         cleanBin(bin, width, height);
-        await dialog('ノイズを取り除きました。単位を求めます');
         const unit = calcUnit(bin, width, height);
         if(inputColors()) {
             await dialog(`${inputColors}色に減色します`);
@@ -113,7 +111,7 @@
         toCv(dd, ww, hh);
     };
     const luminance = (r, g, b) => r * 0.298912 + g * 0.586611 + b * 0.114478 | 0;
-    const laplacian = (data, w, h) => {
+    const LoG = (data, w, h) => {
         const index = (x, y) => x + y * w,
               d = new Uint8ClampedArray(data.length >> 2),
               kernel = [
