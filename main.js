@@ -57,6 +57,7 @@
             '64色': 64,
             '128色': 128,
             '256色': 256,
+            '滅色しない': 0
         }
     });
     $('<h2>').appendTo(h).text('画像を読み込む(2通り)');
@@ -103,16 +104,17 @@
         cleanBin(bin, width, height);
         await dialog('ノイズを取り除きました。単位を求めます');
         const unit = calcUnit(bin, width, height);
-        await dialog(`単位を求めました。${inputColors}色に減色します`);
-        new window.TMedianCut(imgData, window.getColorInfo(imgData)).run(inputColors, true);
-        await dialog('減色しました。ドット絵を描きます');
+        if(inputColors()) {
+            await dialog(`${inputColors}色に減色します`);
+            new window.TMedianCut(imgData, window.getColorInfo(imgData)).run(inputColors, true);
+        }
         const [dd, ww, hh] = await draw(data, width, height, unit);
         await dialog('完成☆');
         toCv(dd, ww, hh);
     };
-    const luminance = ([r,g,b]) => r * 0.298912 + g * 0.586611 + b * 0.114478 | 0;
+    const luminance = (r, g, b) => r * 0.298912 + g * 0.586611 + b * 0.114478 | 0;
     const laplacian = (data, w, h) => {
-        const index = (x,y) => x + y * w,
+        const index = (x, y) => x + y * w,
               d = new Uint8ClampedArray(data.length >> 2),
               kernel = [
                   0, 0, 1, 0, 0,
@@ -133,14 +135,14 @@
                 const xx = i % size,
                       yy = i / size | 0,
                       j = index(x + xx - p, y + yy - p) << 2;
-                sum += v * luminance(data.slice(j, j + 3));
+                sum += v * luminance(...data.slice(j, j + 3));
             }
             if(0x80 < sum) d[index(x,y)] = 1;
         }
         return d;
     };
     const cleanBin = (bin, w, h) => {
-        const index = (x,y) => x + y * w,
+        const index = (x, y) => x + y * w,
               p = 1,
               noise = inputNoise();
         for(const [i,v] of bin.entries()){
@@ -161,7 +163,7 @@
         }
     };
     const calcUnit = (bin, w, h) => {
-        const index = (x,y) => x + y * w,
+        const index = (x, y) => x + y * w,
               ar = [];
         for(const bool of [0, 1]){
             for(let y = 0; y < h; y++){
@@ -189,20 +191,23 @@
     const draw = async (data, w, h, unit) => {
         const ww = w / unit | 0,
               hh = h / unit | 0,
-              index = (x,y) => x + y * w,
-              d = new Uint8ClampedArray(ww * hh << 2),
-              sign = '#';
+              index = (x, y) => x + y * w,
+              d = new Uint8ClampedArray(ww * hh << 2);
         for(let i = 0; i < d.length; i += 4){
             const x = (i >> 2) % ww,
                   y = (i >> 2) / ww | 0,
-                  ar = [];
+                  ar = [],
+                  map = new Map;
             for(let ii = 0, max = unit * unit; ii < max; ii++){
                 const xx = ii % unit,
                       yy = ii / unit | 0,
-                      j = index(unit * x + xx, unit * y + yy) << 2;
-                ar.push(data.slice(j, j + 3).join(sign));
+                      j = index(unit * x + xx, unit * y + yy) << 2,
+                      rgb = data.slice(j, j + 3),
+                      lum = luminance(...rgb);
+                ar.push(lum);
+                map.set(lum, rgb);
             }
-            const [r, g, b] = rpgen3.median(ar).split(sign);
+            const [r, g, b] = map.get(rpgen3.median(ar));
             d[i] = r;
             d[i + 1] = g;
             d[i + 2] = b;
