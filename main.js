@@ -21,6 +21,12 @@
         });
     })();
     $('<button>').appendTo(h).text('処理').on('click', ()=>main());
+    const inputWidth = rpgen3.addInputNum(h,{
+        label: '出力後の幅px(省略可)',
+        value: 0,
+        min: 0,
+        max: 100
+    });
     const inputNoise = rpgen3.addSelect(h,{
         label: 'ノイズ除去度',
         value: 3,
@@ -91,12 +97,16 @@
         ctx.drawImage(img, 0, 0);
         const imgData = ctx.getImageData(0, 0, width, height),
               {data} = imgData;
-        await dialog('エッジ検出します');
-        const bin = LoG(data, width, height);
-        await dialog('ノイズを削除します');
-        cleanBin(bin, width, height);
-        await dialog('単位を求めます');
-        const unit = calcUnit(bin, width, height);
+        const unit = await (async w => {
+            if(w) return width / unit | 0;
+            await dialog('エッジ検出します');
+            const bin = LoG(data, width, height);
+            await dialog('ノイズを削除します');
+            cleanBin(bin, width, height);
+            await dialog('単位を求めます');
+            return calcUnit(bin, width, height);
+        })(inputWidth());
+        if(!unit) msg('単位が0なので描画できません', true);
         if(inputColors()) {
             await dialog(`${inputColors}色に減色します`);
             new window.TMedianCut(imgData, window.getColorInfo(imgData)).run(inputColors, true);
