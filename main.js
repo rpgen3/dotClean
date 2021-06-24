@@ -98,7 +98,7 @@
         const imgData = ctx.getImageData(0, 0, width, height),
               {data} = imgData;
         const unit = await (async w => {
-            if(w) return width / unit | 0;
+            if(w) return width / w | 0;
             await dialog('エッジ検出します');
             const bin = LoG(data, width, height);
             await dialog('ノイズを削除します');
