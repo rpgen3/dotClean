@@ -25,7 +25,7 @@
         label: '出力後の幅px(省略可)',
         value: 0,
         min: 0,
-        max: 100
+        max: 300
     });
     const inputNoise = rpgen3.addSelect(h,{
         label: 'ノイズ除去度',
